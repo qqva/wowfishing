@@ -1,0 +1,14 @@
+## Interface: 120105
+## Title: WoWFisher
+## Notes: Легальный аддон для рыбалки: большие кнопки Забросить/Собрать/Наживка, звук на клюв, бинды под Moonlight/телефон
+## Author: Hermes
+## Version: @project-version@
+## SavedVariables: WoWFisherDB
+## SavedVariablesPerCharacter: WoWFisherCharDB
+## AddonCompartmentFunc: WoWFisher_OpenOptions
+## IconTexture: Interface\Icons\Trade_Fishing
+## X-Curse-Project-ID: 1796060
+## X-Wago-ID: YOUR_WAGO_ID_HERE
+## X-WoWI-ID: YOUR_WOWI_ID_HERE
+
+WoWFisher.lua

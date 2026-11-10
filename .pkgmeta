@@ -1,0 +1,12 @@
+# .pkgmeta для BigWigs Packager
+enable-nolib-creation: true
+manual-changelog: false
+
+# Если понадобятся библиотеки (пока не нужны):
+# externals:
+#   libs/LibStub:
+#     url: git://github.com/tekkub/libstub
+#     tag: latest
+#   libs/AceAddon-3.0:
+#     url: git://github.com/WowAce/Ace3
+#     tag: latest
