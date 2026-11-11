@@ -1,6 +1,6 @@
-## Interface: 120105
+## Interface: 16001, 120105
 ## Title: WoWFisher
-## Notes: Легальный аддон для рыбалки: большие кнопки Забросить/Собрать/Наживка, звук на клюв, бинды под Moonlight/телефон
+## Notes: Аддон для рыбалки: большие кнопки Забросить/Собрать/Наживка, звук на клюв, бинды под Moonlight/телефон
 ## Author: Hermes
 ## Version: @project-version@
 ## SavedVariables: WoWFisherDB
