@@ -1,21 +1,16 @@
 -- WoWFisher — аддон для рыбалки (WoW Forever / Retail)
--- UI: 3 большие кнопки Забросить/Собрать/Наживка, звук на клюв, бинды клавиш
+-- ОДНА большая кнопка. Бинд на "0" настраивается в игре + Moonlight.
 
 local addonName, ns = ...
 WoWFisher = ns
 
 local L = {
-    CAST = "Забросить",
-    LOOT = "Собрать",
-    BAIT = "Наживка",
+    CAST = "Забросить (0)",
     TITLE = "WoWFisher",
     SOUND_ENABLED = "Звук на клюв",
-    SCALE = "Масштаб кнопок",
+    SCALE = "Масштаб кнопки",
     LOCKED = "Закрепить позицию",
     RESET_POS = "Сбросить позицию",
-    KEY_CAST = "Клавиша: Забросить",
-    KEY_LOOT = "Клавиша: Собрать",
-    KEY_BAIT = "Клавиша: Наживка",
 }
 
 local defaults = {
@@ -26,20 +21,17 @@ local defaults = {
         scale = 1.2,
         locked = false,
         soundEnabled = true,
-        keyCast = "F1",
-        keyLoot = "F2",
-        keyBait = "F3",
     }
 }
 
 local BOBBER_SOUND = "Sound\\Interface\\UI_FishingReelIn.ogg"
 
-local function CreateBigButton(parent, name, text, key, onClick)
+local function CreateBigButton(parent, name, text, onClick)
     local btn = CreateFrame("Button", name, parent, "UIPanelButtonTemplate")
-    btn:SetSize(180, 70)
+    btn:SetSize(360, 140)  -- 2x больше (было 180x70)
     btn:SetText(text)
-    btn:SetNormalFontObject(GameFontNormalLarge)
-    btn:SetHighlightFontObject(GameFontHighlightLarge)
+    btn:SetNormalFontObject(GameFontNormalHuge)  -- крупнее
+    btn:SetHighlightFontObject(GameFontHighlightHuge)
     btn:GetFontString():SetPoint("CENTER", 0, 0)
     
     btn:RegisterForClicks("AnyUp")
@@ -48,7 +40,8 @@ local function CreateBigButton(parent, name, text, key, onClick)
     btn:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_TOP")
         GameTooltip:AddLine(self:GetText())
-        GameTooltip:AddLine("Клавиша: " .. (key or "—"), 1, 1, 0.5)
+        GameTooltip:AddLine("В игре забиндь Рыбалку на клавишу 0", 1, 1, 0.5)
+        GameTooltip:AddLine("В Moonlight: экранная кнопка → 0", 1, 1, 0.5)
         GameTooltip:Show()
     end)
     btn:SetScript("OnLeave", GameTooltip_Hide)
@@ -57,7 +50,7 @@ local function CreateBigButton(parent, name, text, key, onClick)
 end
 
 local frame = CreateFrame("Frame", "WoWFisherFrame", UIParent, "BackdropTemplate")
-frame:SetSize(560, 100)
+frame:SetSize(400, 180)
 frame:SetPoint("CENTER", 0, -150)
 frame:SetMovable(true)
 frame:SetClampedToScreen(true)
@@ -78,21 +71,11 @@ title:SetPoint("TOP", 0, -10)
 title:SetText(L.TITLE)
 title:SetTextColor(1, 0.82, 0)
 
-local btnCast = CreateBigButton(frame, "WoWFisherBtnCast", L.CAST, "F1", function()
-    PlaySound(843)
+local btnCast = CreateBigButton(frame, "WoWFisherBtnCast", L.CAST, function()
+    PlaySound(843)  -- клик по кнопке = звук подтверждения
 end)
 
-local btnLoot = CreateBigButton(frame, "WoWFisherBtnLoot", L.LOOT, "F2", function()
-    PlaySound(843)
-end)
-
-local btnBait = CreateBigButton(frame, "WoWFisherBtnBait", L.BAIT, "F3", function()
-    PlaySound(843)
-end)
-
-btnCast:SetPoint("LEFT", frame, "LEFT", 20, 0)
-btnLoot:SetPoint("CENTER", frame, "CENTER", 0, 0)
-btnBait:SetPoint("RIGHT", frame, "RIGHT", -20, 0)
+btnCast:SetPoint("CENTER", frame, "CENTER", 0, 10)
 
 frame:SetScript("OnDragStart", function(self)
     if not WoWFisherDB.profile.locked then
@@ -130,19 +113,13 @@ eventFrame:SetScript("OnEvent", function(self, event, ...)
         if WoWFisherDB.profile.locked then
             frame:EnableMouse(false)
         end
-        
-        btnCast.key = WoWFisherDB.profile.keyCast
-        btnLoot.key = WoWFisherDB.profile.keyLoot
-        btnBait.key = WoWFisherDB.profile.keyBait
-        
-        print("|cFFFFD100WoWFisher|r загружен. ПКМ по фрейму — настройки. Бинды: " .. 
-            WoWFisherDB.profile.keyCast .. "/" .. WoWFisherDB.profile.keyLoot .. "/" .. WoWFisherDB.profile.keyBait)
+        print("|cFFFFD100WoWFisher|r загружен. ПКМ — настройки. Забиндь Рыбалку на 0.")
     
     elseif event == "LOOT_READY" then
         if WoWFisherDB.profile.soundEnabled then
             PlaySoundFile(BOBBER_SOUND, "Master")
         end
-        UIFrameFlash(btnLoot, 0.3, 0.3, 3, false, 0, 0)
+        UIFrameFlash(btnCast, 0.3, 0.3, 3, false, 0, 0)
         
     elseif event == "UI_ERROR_MESSAGE" then
         local msg = ...
@@ -177,14 +154,14 @@ SlashCmdList["WOWFISHER"] = function(msg)
         print("  /wf unlock — разблокировать")
         print("  /wf reset — сбросить позицию")
         print("  /wf sound — toggle звук")
-        print("  ПКМ по фрейму — полное меню")
+        print("  ПКМ по фрейму — меню")
     end
 end
 
 function WoWFisher_OpenOptions()
     if not WoWFisherOptionsFrame then
         local f = CreateFrame("Frame", "WoWFisherOptionsFrame", UIParent, "BasicFrameTemplateWithInset")
-        f:SetSize(320, 380)
+        f:SetSize(320, 280)
         f:SetPoint("CENTER")
         f:SetMovable(true)
         f:SetClampedToScreen(true)
@@ -229,34 +206,6 @@ function WoWFisher_OpenOptions()
             WoWFisherDB.profile.scale = val
             frame:SetScale(val)
         end)
-        
-        local function CreateKeyButton(parent, label, dbKey, yOffset)
-            local btn = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
-            btn:SetSize(260, 30)
-            btn:SetPoint("TOPLEFT", 20, yOffset)
-            btn:SetText(label .. ": " .. WoWFisherDB.profile[dbKey])
-            btn:SetScript("OnClick", function(self)
-                self:SetText(label .. ": нажми клавишу...")
-                self:EnableKeyboard(true)
-                self:SetPropagateKeyboardInput(true)
-                self:SetScript("OnKeyDown", function(s, key)
-                    if key ~= "ESCAPE" then
-                        WoWFisherDB.profile[dbKey] = key
-                        s:SetText(label .. ": " .. key)
-                        if dbKey == "keyCast" then btnCast.key = key end
-                        if dbKey == "keyLoot" then btnLoot.key = key end
-                        if dbKey == "keyBait" then btnBait.key = key end
-                    end
-                    s:EnableKeyboard(false)
-                    s:SetScript("OnKeyDown", nil)
-                end)
-            end)
-            return btn
-        end
-        
-        CreateKeyButton(f, L.KEY_CAST, "keyCast", -160)
-        CreateKeyButton(f, L.KEY_LOOT, "keyLoot", -200)
-        CreateKeyButton(f, L.KEY_BAIT, "keyBait", -240)
         
         local btnReset = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
         btnReset:SetSize(120, 25)
