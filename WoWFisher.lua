@@ -1,5 +1,6 @@
 -- WoWFisher — аддон для рыбалки (WoW Forever / Retail)
 -- ОДНА большая кнопка. Бинд на "0" настраивается в игре + Moonlight.
+-- Красная надпись "НЕТ НАЖИВКИ" загорается, когда на удочке нет зачарования (наживки)
 
 local addonName, ns = ...
 WoWFisher = ns
@@ -7,6 +8,7 @@ WoWFisher = ns
 local L = {
     CAST = "Забросить (0)",
     TITLE = "WoWFisher",
+    NO_BAIT = "НЕТ НАЖИВКИ",
     SOUND_ENABLED = "Звук на клюв",
     SCALE = "Масштаб кнопки",
     LOCKED = "Закрепить позицию",
@@ -28,9 +30,9 @@ local BOBBER_SOUND = "Sound\\Interface\\UI_FishingReelIn.ogg"
 
 local function CreateBigButton(parent, name, text, onClick)
     local btn = CreateFrame("Button", name, parent, "UIPanelButtonTemplate")
-    btn:SetSize(360, 140)  -- 2x больше (было 180x70)
+    btn:SetSize(360, 140)
     btn:SetText(text)
-    btn:SetNormalFontObject(GameFontNormalHuge)  -- крупнее
+    btn:SetNormalFontObject(GameFontNormalHuge)
     btn:SetHighlightFontObject(GameFontHighlightHuge)
     btn:GetFontString():SetPoint("CENTER", 0, 0)
     
@@ -50,7 +52,7 @@ local function CreateBigButton(parent, name, text, onClick)
 end
 
 local frame = CreateFrame("Frame", "WoWFisherFrame", UIParent, "BackdropTemplate")
-frame:SetSize(400, 180)
+frame:SetSize(400, 200)
 frame:SetPoint("CENTER", 0, -150)
 frame:SetMovable(true)
 frame:SetClampedToScreen(true)
@@ -71,11 +73,28 @@ title:SetPoint("TOP", 0, -10)
 title:SetText(L.TITLE)
 title:SetTextColor(1, 0.82, 0)
 
+-- Красная надпись "НЕТ НАЖИВКИ" (по умолчанию скрыта)
+local noBaitText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge")
+noBaitText:SetPoint("BOTTOM", frame, "TOP", 0, 5)
+noBaitText:SetText(L.NO_BAIT)
+noBaitText:SetTextColor(1, 0, 0)
+noBaitText:Hide()
+
 local btnCast = CreateBigButton(frame, "WoWFisherBtnCast", L.CAST, function()
-    PlaySound(843)  -- клик по кнопке = звук подтверждения
+    PlaySound(843)
 end)
 
 btnCast:SetPoint("CENTER", frame, "CENTER", 0, 10)
+
+-- Проверка наживки: GetWeaponEnchantInfo() возвращает hasMainHandEnchant, mainHandExpiration, ...
+local function CheckBait()
+    local hasMainHandEnchant = GetWeaponEnchantInfo()
+    if hasMainHandEnchant then
+        noBaitText:Hide()
+    else
+        noBaitText:Show()
+    end
+end
 
 frame:SetScript("OnDragStart", function(self)
     if not WoWFisherDB.profile.locked then
@@ -96,10 +115,21 @@ frame:SetScript("OnMouseUp", function(self, button)
     end
 end)
 
+-- Таймер для проверки наживки каждую секунду
+local baitCheckFrame = CreateFrame("Frame")
+baitCheckFrame:SetScript("OnUpdate", function(self, elapsed)
+    self.elapsed = (self.elapsed or 0) + elapsed
+    if self.elapsed >= 1 then
+        CheckBait()
+        self.elapsed = 0
+    end
+end)
+
 local eventFrame = CreateFrame("Frame")
 eventFrame:RegisterEvent("LOOT_READY")
 eventFrame:RegisterEvent("UI_ERROR_MESSAGE")
 eventFrame:RegisterEvent("PLAYER_LOGIN")
+eventFrame:RegisterEvent("UNIT_INVENTORY_CHANGED")
 eventFrame:SetScript("OnEvent", function(self, event, ...)
     if event == "PLAYER_LOGIN" then
         WoWFisherDB = WoWFisherDB or { profile = {} }
@@ -113,6 +143,7 @@ eventFrame:SetScript("OnEvent", function(self, event, ...)
         if WoWFisherDB.profile.locked then
             frame:EnableMouse(false)
         end
+        CheckBait()  -- начальная проверка
         print("|cFFFFD100WoWFisher|r загружен. ПКМ — настройки. Забиндь Рыбалку на 0.")
     
     elseif event == "LOOT_READY" then
@@ -123,6 +154,12 @@ eventFrame:SetScript("OnEvent", function(self, event, ...)
         
     elseif event == "UI_ERROR_MESSAGE" then
         local msg = ...
+        
+    elseif event == "UNIT_INVENTORY_CHANGED" then
+        local unit = ...
+        if unit == "player" then
+            CheckBait()
+        end
     end
 end)
 
